@@ -1,0 +1,13 @@
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+tests/
+demo.py
+deploy_gcp.sh
+.git
+.gitignore
+.env
+README.md
+walkthrough.md

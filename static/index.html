@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Ambient Expense-Approval Agent built with Google Agent Development Kit (ADK 2.0) Graph Workflow. Deterministic threshold routing and LLM risk review.">
+  <title>Ambient Expense Approval Agent | ADK 2.0 Graph Workflow</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="brand-wrapper">
+        <div class="brand-icon">⚡</div>
+        <div class="brand-title">
+          <h1>Ambient Expense Approval Agent</h1>
+          <div class="brand-subtitle">
+            <span>Orchestrated via</span>
+            <span class="badge-tag badge-adk">ADK 2.0 Graph Engine</span>
+            <span>• Rule: Under ₹1,000 INR Auto-Approve</span>
+          </div>
+        </div>
+      </div>
+      <div class="engine-status">
+        <span class="pulse-dot"></span>
+        <span>Graph Engine Active</span>
+      </div>
+    </header>
+
+    <!-- Stats Ribbon -->
+    <section class="stats-grid" aria-label="Dashboard Overview Metrics">
+      <div class="stat-card">
+        <div class="stat-label">
+          <span>Total Processed</span>
+          <span>📊</span>
+        </div>
+        <div class="stat-value" id="stat-total">0</div>
+        <div class="stat-meta">Ambient JSON events ingested</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">
+          <span>Auto-Approved (< ₹1,000)</span>
+          <span>⚡</span>
+        </div>
+        <div class="stat-value" id="stat-auto" style="color: var(--accent-emerald);">0</div>
+        <div class="stat-meta">Instant zero-LLM executions</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">
+          <span>Escalated to Human</span>
+          <span>👤</span>
+        </div>
+        <div class="stat-value" id="stat-human" style="color: var(--accent-amber);">0</div>
+        <div class="stat-meta">Pauses via ADK RequestInput</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-label">
+          <span>Total Volume</span>
+          <span>₹</span>
+        </div>
+        <div class="stat-value" id="stat-volume" style="font-family: var(--font-mono);">₹0.00</div>
+        <div class="stat-meta">Processed transaction sum</div>
+      </div>
+    </section>
+
+    <!-- ADK 2.0 Graph Visualizer -->
+    <section class="visualizer-wrapper card" aria-label="ADK 2.0 Workflow Graph Visualizer">
+      <div class="card-header">
+        <div class="card-title">
+          <span>🌐</span>
+          <span>ADK 2.0 Graph Workflow Visualizer</span>
+        </div>
+        <span class="badge-tag badge-adk" id="graph-state-label">Ready for Event</span>
+      </div>
+
+      <div class="graph-canvas">
+        <div class="nodes-container">
+          <!-- START Node -->
+          <div class="graph-node" id="node-start">
+            <div class="node-icon">📥</div>
+            <div class="node-name">START</div>
+            <div class="node-desc">Ingest JSON Event</div>
+          </div>
+
+          <div class="connector-arrow">──►</div>
+
+          <!-- Threshold Evaluator Node -->
+          <div class="graph-node" id="node-threshold">
+            <div class="node-icon">⚖️</div>
+            <div class="node-name">Threshold Check</div>
+            <div class="node-desc">Python Rule (₹1,000)</div>
+          </div>
+
+          <div class="connector-arrow">──►</div>
+
+          <!-- Auto Approve Node (Branch A) -->
+          <div class="graph-node" id="node-auto">
+            <div class="node-icon">⚡</div>
+            <div class="node-name">Auto Approve</div>
+            <div class="node-desc">Zero LLM Call</div>
+          </div>
+
+          <div class="connector-arrow">or</div>
+
+          <!-- LLM Reviewer Node (Branch B) -->
+          <div class="graph-node" id="node-llm">
+            <div class="node-icon">🧠</div>
+            <div class="node-name">LLM Reviewer</div>
+            <div class="node-desc">Risk Judgment</div>
+          </div>
+
+          <div class="connector-arrow">──►</div>
+
+          <!-- HITL Checkpoint Node -->
+          <div class="graph-node" id="node-hitl">
+            <div class="node-icon">⏸️</div>
+            <div class="node-name">HITL Checkpoint</div>
+            <div class="node-desc">RequestInput Pause</div>
+          </div>
+
+          <div class="connector-arrow">──►</div>
+
+          <!-- Finalize Node -->
+          <div class="graph-node" id="node-finalize">
+            <div class="node-icon">🏁</div>
+            <div class="node-name">Finalize</div>
+            <div class="node-desc">Audit Record</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Grid: Ingestion Form & Pending Queue -->
+    <div class="dashboard-grid">
+      <!-- Ingestion Column -->
+      <section class="card" aria-label="Submit Expense Report">
+        <div class="card-header">
+          <div class="card-title">
+            <span>📝</span>
+            <span>Ingest Expense Event</span>
+          </div>
+        </div>
+
+        <!-- 1-Click Presets -->
+        <div class="presets-section">
+          <span class="presets-label">1-Click Test Presets</span>
+          <div class="presets-grid">
+            <button type="button" class="preset-btn" id="preset-small-btn">
+              <span class="preset-title">
+                <span>☕</span>
+                <span>Team Lunch (₹420)</span>
+              </span>
+              <span class="preset-badge preset-badge-auto">Under ₹1K • Auto</span>
+            </button>
+
+            <button type="button" class="preset-btn" id="preset-large-btn">
+              <span class="preset-title">
+                <span>💻</span>
+                <span>Cloud Infrastructure (₹5,400)</span>
+              </span>
+              <span class="preset-badge preset-badge-review">≥ ₹1K • Low Risk</span>
+            </button>
+
+            <button type="button" class="preset-btn" id="preset-flagged-btn">
+              <span class="preset-title">
+                <span>🎁</span>
+                <span>Luxury Festival Hamper (₹14,500)</span>
+              </span>
+              <span class="preset-badge preset-badge-reject">≥ ₹1K • High Risk</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Custom Form -->
+        <form id="expense-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="amount-input">Amount (INR) *</label>
+              <input type="number" id="amount-input" name="amount" step="0.01" min="1" required placeholder="e.g. 750.00">
+            </div>
+            <div class="form-group">
+              <label for="date-input">Expense Date *</label>
+              <input type="date" id="date-input" name="date" required>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="submitter-input">Submitter Email *</label>
+              <input type="text" id="submitter-input" name="submitter" required placeholder="name@company.com">
+            </div>
+            <div class="form-group">
+              <label for="category-input">Category *</label>
+              <select id="category-input" name="category" required>
+                <option value="Meals & Entertainment">Meals & Entertainment</option>
+                <option value="Cloud Infrastructure">Cloud Infrastructure</option>
+                <option value="Software Subscriptions">Software Subscriptions</option>
+                <option value="Office Supplies">Office Supplies</option>
+                <option value="Travel & Lodging">Travel & Lodging</option>
+                <option value="Gifts & Miscellaneous">Gifts & Miscellaneous</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="description-input">Business Justification / Description *</label>
+            <textarea id="description-input" name="description" required placeholder="Provide context and rationale for the expense..."></textarea>
+          </div>
+
+          <button type="submit" class="btn-primary" id="submit-expense-btn">
+            <span>🚀 Ingest Expense Event</span>
+          </button>
+        </form>
+      </section>
+
+      <!-- HITL & Audit Log Column -->
+      <div>
+        <!-- Human-in-the-Loop Action Card (Appears on Pause) -->
+        <section class="hitl-container" id="hitl-card" aria-label="Human Review Queue">
+          <div class="hitl-header">
+            <div class="hitl-title">
+              <span>👤</span>
+              <span>Human Approval Required (Workflow Paused)</span>
+            </div>
+            <span class="hitl-badge" id="hitl-session-badge">Session Active</span>
+          </div>
+
+          <div class="risk-summary-grid">
+            <div class="risk-gauge-card">
+              <div style="font-size: 11px; text-transform: uppercase; color: var(--text-subtle);">Risk Score</div>
+              <div class="gauge-val" id="hitl-risk-score">0.0</div>
+              <span class="risk-badge-large" id="hitl-risk-badge">LOW</span>
+            </div>
+            <div class="risk-details">
+              <div class="risk-row">
+                <span class="risk-row-label">Expense:</span>
+                <span id="hitl-expense-info" style="color: var(--text-main); font-weight: 600;">₹0.00</span>
+              </div>
+              <div class="risk-row">
+                <span class="risk-row-label">LLM Recommendation:</span>
+                <span id="hitl-recommendation" style="font-weight: 700;">APPROVE</span>
+              </div>
+              <div class="risk-row">
+                <span class="risk-row-label">Model Analysis:</span>
+                <span id="hitl-rationale" style="color: var(--text-muted); font-size: 12px;">--</span>
+              </div>
+              <div class="risk-row" id="hitl-flags-container">
+                <span class="risk-row-label">Audit Flags:</span>
+                <div class="risk-flags-list" id="hitl-flags-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="hitl-notes-input">Manager Reviewer Notes</label>
+            <input type="text" id="hitl-notes-input" placeholder="e.g. Verified against Q3 team compute budget...">
+          </div>
+
+          <div class="hitl-actions">
+            <button type="button" class="btn-approve" id="approve-btn">
+              <span>✓ Approve Expense</span>
+            </button>
+            <button type="button" class="btn-reject" id="reject-btn">
+              <span>✕ Reject Expense</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- Audit History Table -->
+        <section class="card" aria-label="Audit Log and Recent Expenses">
+          <div class="card-header">
+            <div class="card-title">
+              <span>📜</span>
+              <span>Workflow Audit Log</span>
+            </div>
+            <button type="button" class="preset-btn" id="refresh-history-btn" style="padding: 6px 12px; font-size: 12px;">
+              <span>🔄 Refresh</span>
+            </button>
+          </div>
+
+          <div class="table-wrapper">
+            <table id="audit-table">
+              <thead>
+                <tr>
+                  <th>Status</th>
+                  <th>Amount</th>
+                  <th>Submitter</th>
+                  <th>Category</th>
+                  <th>Decision / Audit Reason</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody id="audit-tbody">
+                <tr>
+                  <td colspan="6" class="empty-state">
+                    No expense reports ingested yet. Submit an event above or select a 1-click preset.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
