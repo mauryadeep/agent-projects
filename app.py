@@ -42,6 +42,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.middleware("http")
+async def add_no_cache_headers(request, call_next):
+    response = await call_next(request)
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
 # Instantiate the ambient workflow engine
 engine = AmbientExpenseEngine()
 
@@ -69,6 +78,29 @@ async def submit_expense(expense_data: ExpenseReport) -> WorkflowResult:
         return result
     except Exception as e:
         logger.exception("Error processing expense: %s", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/expenses/batch", response_model=List[WorkflowResult])
+async def submit_batch_expenses(expenses: List[ExpenseReport]) -> List[WorkflowResult]:
+    """Ingests multiple expense events sequentially and returns results."""
+    try:
+        results: List[WorkflowResult] = []
+        for expense_data in expenses:
+            result = await engine.process_expense_event(expense_data)
+            record = result.model_dump(mode="json")
+            existing_idx = next(
+                (i for i, item in enumerate(audit_history) if item["session_id"] == result.session_id),
+                None,
+            )
+            if existing_idx is not None:
+                audit_history[existing_idx] = record
+            else:
+                audit_history.insert(0, record)
+            results.append(result)
+        return results
+    except Exception as e:
+        logger.exception("Error processing batch expenses: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 

@@ -80,3 +80,35 @@ def test_api_stats():
     assert "auto_approved" in data
     assert "pending_human_review" in data
     assert data["threshold_rule_inr"] == 1000.0
+
+
+def test_api_batch_submit():
+    """Verify POST /api/expenses/batch processes multiple expenses."""
+    batch_payload = [
+        {
+            "amount": 250.0,
+            "submitter": "batch1@example.com",
+            "category": "Meals & Entertainment",
+            "description": "Snacks",
+            "date": "2026-09-23",
+            "currency": "INR",
+        },
+        {
+            "amount": 6200.0,
+            "submitter": "batch2@example.com",
+            "category": "Cloud Infrastructure",
+            "description": "Database tier upgrade",
+            "date": "2026-09-23",
+            "currency": "INR",
+        },
+    ]
+    response = client.post("/api/expenses/batch", json=batch_payload)
+    assert response.status_code == 200
+    results = response.json()
+    assert len(results) == 2
+    # Item 1 < 1000 INR -> AUTO_APPROVED
+    assert results[0]["status"] == "AUTO_APPROVED"
+    assert results[0]["is_paused"] is False
+    # Item 2 >= 1000 INR -> PENDING_HUMAN_APPROVAL
+    assert results[1]["status"] == "PENDING_HUMAN_APPROVAL"
+    assert results[1]["is_paused"] is True
