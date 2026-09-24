@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Ambient Expense-Approval Agent built with Google Agent Development Kit (ADK 2.0) Graph Workflow. Deterministic threshold routing and LLM risk review.">
   <title>Ambient Expense Approval Agent | ADK 2.0 Graph Workflow</title>
-  <link rel="stylesheet" href="/static/styles.css">
+  <link rel="stylesheet" href="/static/styles.css?v=2.2.1">
 </head>
 <body>
   <div class="container">
@@ -145,38 +145,76 @@
           </div>
         </div>
 
-        <!-- 1-Click Presets -->
+        <!-- Dynamic Presets & Templates Section -->
         <div class="presets-section">
-          <span class="presets-label">1-Click Test Presets</span>
-          <div class="presets-grid">
-            <button type="button" class="preset-btn" id="preset-small-btn">
-              <span class="preset-title">
-                <span>☕</span>
-                <span>Team Lunch (₹420)</span>
-              </span>
-              <span class="preset-badge preset-badge-auto">Under ₹1K • Auto</span>
-            </button>
+          <div class="presets-header-row">
+            <span class="presets-label">
+              <span>⚡ Dynamic Presets</span>
+              <span class="badge-tag badge-adk" id="presets-count-badge">3 presets</span>
+            </span>
+            <div class="presets-actions-bar">
+              <button type="button" class="btn-ghost-sm" id="open-create-preset-btn">
+                <span>➕ Add Preset</span>
+              </button>
+              <button type="button" class="btn-ghost-sm" id="reset-presets-btn" title="Reset to standard defaults">
+                <span>↺ Reset</span>
+              </button>
+            </div>
+          </div>
 
-            <button type="button" class="preset-btn" id="preset-large-btn">
-              <span class="preset-title">
-                <span>💻</span>
-                <span>Cloud Infrastructure (₹5,400)</span>
-              </span>
-              <span class="preset-badge preset-badge-review">≥ ₹1K • Low Risk</span>
-            </button>
+          <!-- Inline Modal / Creator for New Custom Preset -->
+          <div class="create-preset-panel" id="create-preset-panel" style="display: none;">
+            <div class="panel-header">
+              <span>Create New Expense Preset</span>
+              <button type="button" class="close-panel-btn" id="close-preset-panel-btn">✕</button>
+            </div>
+            <div class="panel-body">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="new-preset-title">Preset Label / Title *</label>
+                  <input type="text" id="new-preset-title" placeholder="e.g. Airport Taxi">
+                </div>
+                <div class="form-group">
+                  <label for="new-preset-amount">Amount (INR) *</label>
+                  <input type="number" id="new-preset-amount" step="0.01" min="1" placeholder="e.g. 850.00">
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="new-preset-category">Category *</label>
+                  <select id="new-preset-category">
+                    <option value="Meals & Entertainment">Meals & Entertainment</option>
+                    <option value="Cloud Infrastructure">Cloud Infrastructure</option>
+                    <option value="Software Subscriptions">Software Subscriptions</option>
+                    <option value="Office Supplies">Office Supplies</option>
+                    <option value="Travel & Lodging">Travel & Lodging</option>
+                    <option value="Gifts & Miscellaneous">Gifts & Miscellaneous</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="new-preset-submitter">Submitter Email *</label>
+                  <input type="text" id="new-preset-submitter" placeholder="employee@company.com">
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="new-preset-desc">Description *</label>
+                <input type="text" id="new-preset-desc" placeholder="Brief rationale or details...">
+              </div>
+              <div class="panel-footer">
+                <button type="button" class="btn-primary-sm" id="save-new-preset-btn">✓ Save to Presets</button>
+                <button type="button" class="btn-ghost-sm" id="cancel-new-preset-btn">Cancel</button>
+              </div>
+            </div>
+          </div>
 
-            <button type="button" class="preset-btn" id="preset-flagged-btn">
-              <span class="preset-title">
-                <span>🎁</span>
-                <span>Luxury Festival Hamper (₹14,500)</span>
-              </span>
-              <span class="preset-badge preset-badge-reject">≥ ₹1K • High Risk</span>
-            </button>
+          <!-- Dynamic Presets Container -->
+          <div class="presets-grid" id="presets-container">
+            <!-- Rendered dynamically by app.js -->
           </div>
         </div>
 
         <!-- Custom Form -->
-        <form id="expense-form">
+        <form id="expense-form" action="javascript:void(0);" onsubmit="return false;">
           <div class="form-row">
             <div class="form-group">
               <label for="amount-input">Amount (INR) *</label>
@@ -211,10 +249,33 @@
             <textarea id="description-input" name="description" required placeholder="Provide context and rationale for the expense..."></textarea>
           </div>
 
-          <button type="submit" class="btn-primary" id="submit-expense-btn">
-            <span>🚀 Ingest Expense Event</span>
-          </button>
+          <div class="form-actions-bar">
+            <button type="button" class="btn-primary" id="submit-expense-btn">
+              <span>🚀 Ingest Expense Event</span>
+            </button>
+            <button type="button" class="btn-secondary" id="save-current-form-preset-btn" title="Save current form values as a new preset">
+              <span>💾 Save as Preset</span>
+            </button>
+            <button type="button" class="btn-secondary" id="add-to-queue-btn" title="Add to batch queue">
+              <span>➕ Add to Queue</span>
+            </button>
+          </div>
         </form>
+
+        <!-- Batch Queue Panel (Optional Multi-Expense Ingestion) -->
+        <div class="batch-queue-card" id="batch-queue-card" style="display: none;">
+          <div class="batch-queue-header">
+            <div style="font-weight: 700; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+              <span>📦 Ingestion Queue</span>
+              <span class="badge-tag badge-adk" id="queue-count-badge">0 items</span>
+            </div>
+            <button type="button" class="btn-ghost-sm" id="clear-queue-btn" style="color: var(--accent-rose);">Clear</button>
+          </div>
+          <div class="queue-list" id="queue-list"></div>
+          <button type="button" class="btn-primary" id="ingest-queue-btn" style="margin-top: 10px; padding: 10px;">
+            <span>⚡ Ingest All Queued Events</span>
+          </button>
+        </div>
       </section>
 
       <!-- HITL & Audit Log Column -->
@@ -308,6 +369,9 @@
     </div>
   </div>
 
-  <script src="/static/app.js"></script>
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <script src="/static/app.js?v=2.2.1"></script>
 </body>
 </html>
